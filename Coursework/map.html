@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Air pollution Heatmap</title>
+  <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BreezoMeter Tiles</title>
+    <!-- Mapbox -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+</head>
+
+<body>
+  <div class="section-first">
+    <div class="container">
+      <header class="header">
+        <div class="header__body">
+          <div class="header__logo">
+            APM
+          </div>
+          <div class="header__menu">
+            <ul class="header__list">
+              <li><a href="#" class="header__link">Home</a></li>
+              <li><a href="about.html" class="header__link">About</a></li>
+              <li><a href="map.html" class="header__link">Map</a></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div id="map" style="width: 1000px; height: 1000px;"></div>
+    <script>
+      var apiKey = "ee59567258c0477d91c4890d47ad04bc"; // Your BreezoMeter API key
+      var mapBoxAccessToken = "pk.eyJ1IjoiMjYzMDB1bGEiLCJhIjoiY2tvdnNiZGNyMGJjNTJwcGU1enM2emI1dyJ9.0mkMt3cqZFOa03w3AF90Bg"; // your mapbox access token from: https://account.mapbox.com
+
+      var errorMessageBrz =
+        "Update the variable 'apiKey' with a BreezoMeter API key to see the tiles. Contact BreezoMeter if you need any help:    breezometer.com/contact-us";
+      var errorMessageMapbox =
+        "Update the variable 'mapBoxAccessToken' with a Mapbox Access Token to initialize the Mapbox SDK. You can get it from:                https://account.mapbox.com";
+
+      if (apiKey === "") alert(errorMessageBrz);
+      if (mapBoxAccessToken === "") alert(errorMessageMapbox);
+
+      var map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/streets-v11", // your stylesheet location
+        center: [-74.5, 40], // starting position [lng, lat]
+        zoom: 9, // starting zoom
+        accessToken: mapBoxAccessToken
+      });
+
+      map.on("load", function() {
+        addRasterSource();
+        addRasterLayer();
+      });
+
+      function addRasterSource() {
+        map.addSource("breezometer-tiles", {
+          type: "raster",
+          tiles: [
+            `https://tiles.breezometer.com/v1/air-quality/breezometer-aqi/current-conditions/{z}/{x}/{y}.png?key=${apiKey}&breezometer_aqi_color=indiper`
+          ],
+          tileSize: 256,
+          maxzoom: 8
+        });
+      }
+
+      function addRasterLayer() {
+        map.addLayer(
+          {
+            id: "breezometer-tiles",
+            type: "raster",
+            source: "breezometer-tiles",
+            minzoom: 0,
+            maxzoom: 22,
+            paint: {
+              "raster-opacity": 0.6
+            }
+          },
+          "admin-1-boundary-bg"
+        );
+      }
+    </script>
+      </div>
+    </div>
+  </div>
+
+  
+</body>
+
+</html>
