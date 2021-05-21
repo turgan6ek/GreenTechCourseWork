@@ -1,0 +1,588 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="PortMap" content="">
+    <meta name="Data and Geographic Services" content="">
+
+    <title>Air pollution Heatmap</title>
+    <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- JQuery -->
+    <script src="assets/js/jquery-3.3.1.min.js"></script>
+
+    <!-- progress bar  -->
+    <script src="assets/libs/progress-bar/progress.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="assets/libs/progress-bar/progress.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css"
+        integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
+
+    <!-- Mapbox GL API CDN-->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- Turf -->
+    <script src='assets/libs/turf/turf.min.js'></script>
+    <!--<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>-->
+
+    <!-- Layer Tree Plugin -->
+    <script src='assets/libs/layerTree/layer-tree.js'></script>
+    <link href='assets/libs/layerTree/styles.min.css' rel='stylesheet' />
+    <link href='assets/libs/layerTree/layer-tree-group-settings.css' rel='stylesheet' />
+
+    <!-- Mapbox GL Draw API -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.4/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.4/mapbox-gl-draw.css'
+        type='text/css' />
+
+    <!-- Mapbox GL Geocoder API -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.0.1/mapbox-gl-geocoder.js'></script>
+    <link rel='stylesheet' href='assets/libs/geocoder/mapbox-gl-geocoder.css' type='text/css' />
+
+    <!-- Layer Search -->
+    <link href="assets/libs/jsonSearch/chosen/chosen.css" rel="stylesheet">
+    <script src="assets/libs/jsonSearch/layerSearch.js"></script>
+
+    <!-- JQuery UI -->
+    <link rel="stylesheet" href="assets/libs/jquery-ui-1.12.1/jquery-ui.min.css" type="text/css">
+    <script src="assets/libs/jquery-ui-1.12.1/jquery-ui.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link href="assets/css/styles-custom.css" rel="stylesheet">
+
+    <!-- Misc. CSS -->
+    <link href='assets/css/text-editor-style.css' rel='stylesheet' />
+
+    <style>
+        /*mapbox gl css custom settings*/
+        #map {
+            position: absolute;
+            top: 40px;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .mapboxgl-ctrl-group button+button {
+            border-top: none
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- progress bar start -->
+    <div class='progress' id="progress_div">
+
+        <h2 style="text-align: center; margin-top:15%; color: white">
+            <img style="padding-left: 10px;" src="assets/images/logos/globe-africa-solid.svg" height="111" width="111">
+
+        </h2>
+
+        <div class='emptybar'></div>
+        <div class='bar' id='bar1'></div>
+        <div class='percent' id='percent1'></div>
+
+
+    </div>
+
+    <input type="hidden" id="progress_width" value="0">
+    <!-- progress bar end -->
+
+    <div id="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a style="display: inline-flex" class="navbar-brand" href="jellyfish/index.html"><img style="margin-top: 2px;"
+                        src="assets/images/logos/globe-africa-solid.svg" height="16" width="16">&nbsp;Air pollution Heatmap</a>
+
+            </div>
+
+            <!-- Sidebar Menu Tools -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav side-nav">
+
+                    <li>
+                        <!-- Layer List Button -->
+                        <a style="border-top-right-radius: 4px; border-top-left-radius: 4px; border-top: 0;"
+                            class="clickable" data-toggle="modal" data-target="#layersModal" title="Layer List"><i
+                                class="fa fa-fw fa-list-ul"></i></a>
+                    </li>
+                    <li>
+                        <!-- Draw Button -->
+                        <a class="clickable" data-toggle="modal" data-target="#drawModal" title="Draw & Measure"><i
+                                class="fas fa-pencil-ruler"></i></a>
+                    </li>
+
+                    <li>
+                        <!-- Print Button -->
+                        <a class="clickable" style="border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"
+                            id='mapboxgl-ctrl-print' data-toggle='modal' data-target='#map-print-modal'
+                            title="Print Map"><i class="fa fa-fw fa-print"></i></a>
+                    </li>
+
+
+                </ul>
+            </div>
+        </nav>
+
+
+        <!-- 3D Button -->
+        <!-- 3D Button -->
+        <!-- 3D Button -->
+        <input type="button" value="3D" id="threeDbutton" style="padding-right: 7px; padding-left: 7px;" onclick="threeDbutton();">
+
+        <!-- Layer List Modal -->
+        <!-- Layer List Modal -->
+        <!-- Layer List Modal -->
+        <div class="modal left" id="layersModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fa fa-fw fa-list-ul"></i>&nbsp;Layers</h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div id="menu"></div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Attributes Modal -->
+        <!-- Attributes Modal -->
+        <!-- Attributes Modal -->
+        <div class="modal left" id="attributesModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fa fa-fw fa-info"></i>&nbsp;Layer Attributes
+                        </h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div>
+
+                            <div style="font-size: 12px" id="layer-attribute"></div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Draw Modal -->
+        <!-- Draw Modal -->
+        <!-- Draw Modal -->
+        <div class="modal left" id="drawModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fas fa-pencil-ruler"></i>&nbsp;Draw &
+                            Measure
+                        </h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <!--Text Tool-->
+                        <p style="font-size: 12px"><i class="fas fa-align-left"></i> Text Editor:</p>
+
+                        <div style="display: inline-flex; width: 100%">
+                            <button id="textTool" active='false' onclick="activateTool(this)"><i
+                                    class="fa fa-fw fa-plus"></i> Add Text</button>
+                            <button id="editTextTool" active='false' onclick="activateTool(this)"><i
+                                    class="fa fa-fw fa-edit"></i> Edit Text</button>
+                        </div>
+
+                        <br />
+
+                        <div style="display: inline-flex; width: 100%; padding-top: 8px">
+                            <div id='customTextColor' style="padding-top: 7px;"></div>
+                            <div id='customTextSize'
+                                style="padding-left: 10px; font-family: 'Times New Roman', Times, serif;"></div>
+                        </div>
+
+                        <br />
+                        <hr>
+                        <br />
+
+
+                        <!--Draw Tool-->
+                        <p style="font-size: 12px"><i class="fas fa-draw-polygon"></i> Draw Tools:</p>
+
+                        <div id="drawAppend"></div>
+
+                        <div style="display: flex; flex-direction: row;">
+                            <div id='customDrawColor' style="padding-top: 7px;"></div>
+                        </div>
+
+
+                        <hr>
+                        <br />
+
+
+                        <p style="font-size: 12px"><i class="fas fa-pencil-ruler"></i> Measurements:</p>
+
+                        <p style="font-size: 12px; margin: 0;">area:</p>
+                        <div id='calculated-area'> </div>
+
+                        <p style="font-size: 12px; margin: 0;">length/perimeter:</p>
+                        <div id='calculated-length'></div>
+
+                        <div style="display: inline-flex">
+                            <i style="font-size:smaller; margin: 5px 4px 0px 4px;"><input type="radio" name="unit"
+                                    id="feet" value="feet" checked="checked" /> ft &nbsp;</i>
+                            <i style="font-size:smaller; margin: 5px 4px 0px 4px;"><input type="radio" name="unit"
+                                    id="meter" value="meter" /> m &nbsp;</i>
+                            <i style="font-size:smaller; margin: 5px 4px 0px 4px;"><input type="radio" name="unit"
+                                    id="mile" value="mile" /> mi &nbsp;</i>
+                            <i style="font-size:smaller; margin: 5px 4px 0px 4px;"><input type="radio" name="unit"
+                                    id="kilometer" value="kilometer" /> km &nbsp;</i>
+                            <i style="font-size:smaller; margin: 5px 0px 0px 4px;"><input type="radio" name="unit"
+                                    id="acre" value="acre" /> acres &nbsp;</i>
+                        </div>
+
+
+                        <br />
+                        <hr style="margin-top: 15px">
+                        <br />
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Modal -->
+        <!-- Location Modal -->
+        <!-- Location Modal -->
+        <div class="modal left" id="geolocationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i
+                                class="fas fa-fw fa-map-marker-alt"></i>&nbsp;Location Tools</h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <!-- enter lng/lat -->
+                        <div style="vertical-align:top;">
+                            <p style="font-size: 12px"><i class="fas fa-map-marked-alt"></i> Enter Coordinates</p>
+                            <input type="number" id='lngInput' placeholder="longitude"><br>
+                            <input type="number" id='latInput' placeholder="latitude"><br>
+
+                            <div style="padding-top:10px">
+                                <input type="button" value="find" id="findLLButton" style="font-size: 10px;">
+                                <input type="button" value="clear" id="findLLButtonClear" style="font-size: 10px;">
+                            </div>
+                        </div>
+
+
+                        <hr>
+                        <br />
+
+                        <!-- lng/lat on map click -->
+                        <p style="font-size: 12px"><i class="fas fa-mouse-pointer"></i>  Click map for results:</p>
+                        <pre id='info'><i class="fa fa-fw fa-globe"></i> lng/lat</pre>
+
+                        <hr>
+                        <br />
+
+                        <!-- address geocode api-->
+                        <p style="font-size: 12px"><i class="fas fa-home"></i> Address Search:</p>
+                        <div id="addressAppend"></div>
+
+                        <hr>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Modal -->
+        <!-- Search Modal -->
+        <!-- Search Modal -->
+        <div class="modal left" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel"><i class="fa fa-fw fa-search"></i>&nbsp;Search Tools
+                        </h4>
+                    </div>
+
+                    <div class="modal-body">
+                        <p style="margin-bottom: -1px; padding: 0px 0px 5px 0px; width: 100%; font-size: 12px;">
+                            <br />Select a layer to search:
+                        </p>
+
+                        <select class="layer-picker" id="json_layer" data-placeholder="Layer Picker"></select>
+
+                        <br />
+
+                        <p style="margin-bottom: -1px; padding: 5px 5px 5px 5px; width: 100%; background-color: #fafafa; color: #528ea7; font-size: smaller; "
+                            id="property-descr"><br /></p>
+
+                        <div style="display: inline-flex;" id="target_layer">
+
+                            <button class="clickable" type="submit" id="search_general"><i
+                                    class="fa fa-search"></i></button>
+
+                            <input type="search" id="general_search" placeholder="Search" />
+
+
+                            <input type="hidden" id="property-value"><br />
+
+                            <button class="clickable" type="submit" id="clear_general"><i
+                                    class="fas fa-times"></i></button>
+                        </div>
+
+                        <script>
+                            //Allows user to hit enter to search for json property
+                            $("#general_search").keyup(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search_general").click();
+                                }
+                            });
+                        </script>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Modal -->
+        <!-- Save Modal -->
+        <!-- Save Modal -->
+        <div id="saveModal" class="modal" role="dialog" style="margin-top: 20px;">
+            <div class="modal-dialog">
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title"><i class="fas fa-fw fa-save"></i>&nbsp;View saved:</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div style="display: inline-flex; width: 100%">
+
+                            <script>
+                                function copyToClipboard(elementId) {
+
+                                    var aux = document.createElement("input");
+                                    aux.setAttribute("value", document.getElementById(elementId).innerHTML);
+                                    document.body.appendChild(aux);
+                                    aux.select();
+                                    document.execCommand("copy");
+                                    document.body.removeChild(aux);
+                                    document.getElementById("copyButton").innerHTML = "<i class='fa fa-fw fa-clipboard'></i>" + "" + "Copied";
+                                    setTimeout(function () {
+                                        document.getElementById('copyButton').innerHTML = "<i class='fa fa-fw fa-clipboard'></i>";
+                                    }, 2000);
+                                }
+                            </script>
+
+                            <div type="text" id="urlCopied" class="#calcualated-area"></div>
+
+                            <button onclick="copyToClipboard('urlCopied')" id="copyButton"><i
+                                    class="fa fa-fw fa-clipboard"></i></button>
+
+                        </div>
+
+                        <div style="padding-left: 10px; padding-top: 10px; font-size:xx-small; margin:0"><i
+                                style="color:#dc4f4f" class="fa fa-fw fa-exclamation-circle"></i> Keep a record of this
+                            URL for future use
+                        </div>
+
+                        <br />
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Modal -->
+        <!-- Print Modal -->
+        <!-- Print Modal -->
+        <div id="map-print-modal" class="modal" role="dialog" style="margin-top: 20px;">
+            <div class="modal-dialog">
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-print"></i>&nbsp;Print Map</h4>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <!-- print form -->
+                        <form class="form-horizontal container-fluid" id="print-form">
+                            <div class="row">
+
+                                <!-- title -->
+                                <div class="col">
+                                    <div class="form-group col-sm-12">
+                                        <input id="export-title" name="export-title" type="text"
+                                            style="font-size: smaller" placeholder="Map Title"
+                                            class="form-control input-md" maxlength="90">
+                                    </div>
+                                </div>
+
+                                <!-- output format -->
+                                <div class="radio-groups format form-group col-sm-12">
+
+                                    <div>
+                                        <label>Format: </label>
+                                        <label class="radio-inline" for="output-format-0">
+                                            <input type="radio" name="output-format" id="output-format-0" value="png">
+                                            PNG
+                                        </label>
+                                        <label class="radio-inline" for="output-format-1">
+                                            <input type="radio" name="output-format" id="output-format-1" value="pdf"
+                                                checked="checked">
+                                            PDF
+                                        </label>
+
+                                    </div>
+                                </div>
+                                <!-- format/dimensions -->
+                                <div class="radio-groups size form-group col-sm-12">
+
+                                    <div>
+                                        <label>Dimensions: </label>
+                                        <label class="radio-inline" for="dimensions-0">
+                                            <input type="radio" name="dimensions" id="dimensions-0" value="default"
+                                                checked="checked">
+                                            8.5 x 11
+                                        </label>
+                                        <label class="radio-inline" for="dimensions-1">
+                                            <input type="radio" name="dimensions" id="dimensions-1" value="large">
+                                            11 x 17 (legend)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div>
+
+                                    <button type="button" id="export-map" data-dismiss="modal"><i
+                                            class="fas fa-file-download"></i> Export</button>
+
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Disclaimer Modal -->
+        <!-- Disclaimer Modal -->
+        <!-- Disclaimer Modal -->
+        <div id="disclaimerModal" class="modal" role="dialog" style="margin-top: 20px;">
+            <div class="modal-dialog">
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-gavel"></i>&nbsp;Disclaimer</h4>
+                    </div>
+                    <div class="modal-body" style="font-size: 10px; font-weight: 500;">
+                        <p>
+                            A place to put your disclaimer...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Load Map Div -->
+        <!-- Load Map Div -->
+        <!-- Load Map Div -->
+        <div id='map'></div>
+
+        <!-- Load coordinates div (Part of Geolocation Modal)-->
+        <div id='coordinates' class='coordinates'></div>
+
+    </div>
+
+
+    <!-- Print JS and required Libs -->
+    <script src='assets/libs/print-export/libs/canvas-to-blob.min.js'></script>
+    <script src='assets/libs/print-export/libs/jspdf.min.js'></script>
+    <script src='assets/libs/print-export/libs/pdf.combined.min.js'></script>
+    <script src='assets/libs/print-export/libs/FileSaver.min.js'></script>
+    <script src='assets/libs/print-export/libs/html2canvas.min.js'></script>
+    <script src='assets/libs/print-export/libs/cropper.min.js'></script>
+    <script src='assets/js/print.js'></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="assets/libs/bootstrap/bootstrap.min.js"></script>
+
+    <!-- Leaflet JavaScript -->
+    <script src="assets/libs/leaflet/leaflet.js"></script>
+
+    <!-- Map JavaScript -->
+    <script src="assets/js/map.js"></script>
+
+    <!-- Search Layer Config -->
+    <script src="assets/libs/jsonSearch/layers.js"></script>
+
+    <!-- Layer Search Scripts -->
+    <script src="assets/libs/jsonSearch/chosen/chosen.jquery.js"></script>
+
+    <script type="text/javascript">
+        $("#json_layer").change(function () {
+            $("#general_search").val("");
+            $("#property-descr").html("<br />");
+            var source_name = $('#json_layer').val();
+            //setMapLayer(source_name);
+            refreshJsonSource(source_name);
+        });
+    </script>
+
+</body>
+
+</html>
